@@ -1,4 +1,110 @@
-// /** @format */
+import React, { useState } from "react";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import AddSupplierModal from "./component/AddSupplierModal";
+
+const MainSuppliers = () => {
+  const suppliers = [
+    {
+      name: "Richard Martin",
+      product: "Kit Kat",
+      category: "Food",
+      buyingprice: "100$",
+      contactNumber: "7687764556",
+      email: "richard@gmail.com",
+      type: "Taking Return",
+      onTheWay: 13,
+    },
+  ];
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Suppliers</h1>
+        <div className="space-x-2">
+          <button
+            onClick={openModal}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Add Supplier
+          </button>
+          {/* Add Supplier Modal */}
+          <AddSupplierModal isOpen={isModalOpen} closeModal={closeModal} />
+          <Menu>
+            <MenuButton className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+              Filters
+            </MenuButton>
+            <MenuItems anchor="bottom">
+              <MenuItem>
+                <a className="block data-[focus]:bg-blue-100" href="/settings">
+                  Newest
+                </a>
+              </MenuItem>
+              <MenuItem>
+                <a className="block data-[focus]:bg-blue-100" href="/support">
+                  Oldest
+                </a>
+              </MenuItem>
+            </MenuItems>
+          </Menu>
+          <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+            Download All
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="py-2 px-4 text-left">Supplier Name</th>
+              <th className="py-2 px-4 text-left">Product</th>
+              <th className="py-2 px-4 text-left">Category</th>
+              <th className="py-2 px-4 text-left">Buying Price</th>
+              <th className="py-2 px-4 text-left">Contact Number</th>
+              <th className="py-2 px-4 text-left">Email</th>
+              <th className="py-2 px-4 text-left">Type</th>
+              <th className="py-2 px-4 text-left">On the way</th>
+            </tr>
+          </thead>
+          <tbody>
+            {suppliers.map((supplier, index) => (
+              <tr
+                key={index}
+                className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+              >
+                <td className="py-2 px-4">{supplier.name}</td>
+                <td className="py-2 px-4">{supplier.product}</td>
+                <td className="py-2 px-4">{supplier.category}</td>
+                <td className="py-2 px-4">{supplier.buyingprice}</td>
+                <td className="py-2 px-4">{supplier.contactNumber}</td>
+                <td className="py-2 px-4">{supplier.email}</td>
+                <td className="py-2 px-4">{supplier.type}</td>
+                <td className="py-2 px-4">{supplier.onTheWay}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex justify-between items-center mt-6">
+        <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+          Previous
+        </button>
+        <p>Page 1 of 10</p>
+        <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default MainSuppliers;
 
 // import { Edit2, Sort, UserRemove } from "iconsax-react";
 // import { useEffect, useState } from "react";
@@ -142,10 +248,3 @@
 // };
 
 // export default Suppliers;
-import React from "react";
-
-const MainSuppliers = () => {
-  return <div>MainSuppliers</div>;
-};
-
-export default MainSuppliers;
