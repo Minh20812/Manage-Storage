@@ -1,25 +1,88 @@
-import React, { useState } from "react";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import React, { useState, useMemo } from "react";
 import AddSupplierModal from "./component/AddSupplierModal";
+import { useGetAllSuppliersQuery } from "../../../redux/api/supplierApiSlice";
+import Filter from "./component/Filter";
 
 const MainSuppliers = () => {
-  const suppliers = [
-    {
-      name: "Richard Martin",
-      product: "Kit Kat",
-      category: "Food",
-      buyingprice: "100$",
-      contactNumber: "7687764556",
-      email: "richard@gmail.com",
-      type: "Taking Return",
-      onTheWay: 13,
-    },
-  ];
-
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentFilter, setCurrentFilter] = useState("");
+  const itemsPerPage = 10;
+
+  const { data: suppliers = [], isLoading, error } = useGetAllSuppliersQuery();
+
+  const filteredSuppliers = useMemo(() => {
+    let result = [...suppliers];
+    if (currentFilter === "az") {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (currentFilter === "newest") {
+      result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (currentFilter === "oldest") {
+      result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+    return result;
+  }, [suppliers, currentFilter]);
+
+  const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentSuppliers = filteredSuppliers.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const handleFilter = (filterValue) => {
+    setCurrentFilter(filterValue);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  // Generate CSV manually
+  const downloadAllData = () => {
+    const csvHeader =
+      "Supplier Name,Product,Category,Buying Price,Contact Number,Email\n";
+    const csvRows = suppliers
+      .map((supplier) =>
+        [
+          supplier.name,
+          supplier.product,
+          supplier.category,
+          supplier.buyingPrice,
+          supplier.contactNumber,
+          supplier.email,
+        ].join(",")
+      )
+      .join("\n");
+
+    const csvContent = csvHeader + csvRows;
+
+    // Create a Blob for downloading
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "suppliers_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -32,26 +95,12 @@ const MainSuppliers = () => {
           >
             Add Supplier
           </button>
-          {/* Add Supplier Modal */}
           <AddSupplierModal isOpen={isModalOpen} closeModal={closeModal} />
-          <Menu>
-            <MenuButton className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-              Filters
-            </MenuButton>
-            <MenuItems anchor="bottom">
-              <MenuItem>
-                <a className="block data-[focus]:bg-blue-100" href="/settings">
-                  Newest
-                </a>
-              </MenuItem>
-              <MenuItem>
-                <a className="block data-[focus]:bg-blue-100" href="/support">
-                  Oldest
-                </a>
-              </MenuItem>
-            </MenuItems>
-          </Menu>
-          <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+          <Filter onFilter={handleFilter} />
+          <button
+            onClick={downloadAllData}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
             Download All
           </button>
         </div>
@@ -67,24 +116,20 @@ const MainSuppliers = () => {
               <th className="py-2 px-4 text-left">Buying Price</th>
               <th className="py-2 px-4 text-left">Contact Number</th>
               <th className="py-2 px-4 text-left">Email</th>
-              <th className="py-2 px-4 text-left">Type</th>
-              <th className="py-2 px-4 text-left">On the way</th>
             </tr>
           </thead>
           <tbody>
-            {suppliers.map((supplier, index) => (
+            {currentSuppliers.map((supplier, index) => (
               <tr
-                key={index}
+                key={supplier._id}
                 className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
               >
                 <td className="py-2 px-4">{supplier.name}</td>
                 <td className="py-2 px-4">{supplier.product}</td>
                 <td className="py-2 px-4">{supplier.category}</td>
-                <td className="py-2 px-4">{supplier.buyingprice}</td>
+                <td className="py-2 px-4">{supplier.buyingPrice}</td>
                 <td className="py-2 px-4">{supplier.contactNumber}</td>
                 <td className="py-2 px-4">{supplier.email}</td>
-                <td className="py-2 px-4">{supplier.type}</td>
-                <td className="py-2 px-4">{supplier.onTheWay}</td>
               </tr>
             ))}
           </tbody>
@@ -92,11 +137,21 @@ const MainSuppliers = () => {
       </div>
 
       <div className="flex justify-between items-center mt-6">
-        <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+        <button
+          onClick={prevPage}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+        >
           Previous
         </button>
-        <p>Page 1 of 10</p>
-        <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+        <p>
+          Page {currentPage} of {totalPages}
+        </p>
+        <button
+          onClick={nextPage}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+        >
           Next
         </button>
       </div>
@@ -105,146 +160,3 @@ const MainSuppliers = () => {
 };
 
 export default MainSuppliers;
-
-// import { Edit2, Sort, UserRemove } from "iconsax-react";
-// import { useEffect, useState } from "react";
-// import handleAPI from "../apis/handleAPI";
-// import { Button } from "@headlessui/react";
-// import { ToogleSupplier } from "../../../modals/ToogleSupplier";
-
-// import TableComponent from "../../../components/TableComponent";
-// import { useNavigate, useRoutes, useSearchParams } from "react-router-dom";
-
-// const { Title, Text } = Typography;
-// const { confirm } = Modal;
-
-// const Suppliers = () => {
-//   const [isVisibleModalAddNew, setIsVisibleModalAddNew] = useState(false);
-//   const [suppliers, setSuppliers] = useState([]);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [supplierSelected, setSupplierSelected] = useState();
-//   const [page, setPage] = useState(1);
-//   const [pageSize, setPageSize] = useState(10);
-//   const [total, setTotal] = useState(10);
-//   const [forms, setForms] = useState();
-
-//   useEffect(() => {
-//     getData();
-//   }, []);
-
-//   useEffect(() => {
-//     getSuppliers();
-//   }, [page, pageSize]);
-
-//   const getData = async () => {
-//     setIsLoading(true);
-//     try {
-//       await getFroms();
-//     } catch (error) {
-//       message.error(error.message);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const getFroms = async () => {
-//     const api = `/supplier/get-form`;
-//     const res = await handleAPI(api);
-
-//     res.data && setForms(res.data);
-//   };
-
-//   const getSuppliers = async () => {
-//     const api = `/supplier?page=${page}&pageSize=${pageSize}`;
-//     setIsLoading(true);
-//     try {
-//       const res = await handleAPI(api);
-//       res.data && setSuppliers(res.data.items);
-
-//       const items = [];
-
-//       res.data.items.forEach((item, index) =>
-//         items.push({
-//           index: (page - 1) * pageSize + (index + 1),
-//           ...item,
-//         })
-//       );
-
-//       setSuppliers(items);
-//       setTotal(res.data.total);
-//     } catch (error) {
-//       message.error(error.message);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const removeSuppiler = async (id) => {
-//     try {
-//       await handleAPI(`/supplier/remove?id=${id}`, undefined, "delete");
-
-//       await getSuppliers();
-//       message.error("Remove supplier successfully!!!");
-//     } catch (error) {
-//       console.log(error);
-//     }
-//   };
-
-//   return forms ? (
-//     <div>
-//       <TableComponent
-//         api="supplier"
-//         onPageChange={(val) => {
-//           setPage(val.page);
-//           setPageSize(val.pageSize);
-//         }}
-//         onAddNew={() => {
-//           setIsVisibleModalAddNew(true);
-//         }}
-//         loading={isLoading}
-//         forms={forms}
-//         records={suppliers}
-//         total={total}
-//         extraColumn={(item) => (
-//           <div>
-//             <Button
-//               type="text"
-//               onClick={() => {
-//                 setSupplierSelected(item);
-//                 setIsVisibleModalAddNew(true);
-//               }}
-//               icon={<Edit2 size={18} className="text-info" />}
-//             />
-
-//             <Button
-//               onClick={() =>
-//                 confirm({
-//                   title: "Comfirm",
-//                   content: "Are you sure you want to remove this supplier?",
-//                   onOk: () => removeSuppiler(item._id),
-//                 })
-//               }
-//               type="text"
-//               icon={<UserRemove size={18} className="text-danger" />}
-//             />
-//           </div>
-//         )}
-//       />
-
-//       <ToogleSupplier
-//         visible={isVisibleModalAddNew}
-//         onClose={() => {
-//           supplierSelected && getSuppliers();
-//           setSupplierSelected(undefined);
-//           setIsVisibleModalAddNew(false);
-//         }}
-//         onAddNew={(val) => setSuppliers([...suppliers, val])}
-//         supplier={supplierSelected}
-//       />
-//     </div>
-//   ) : (
-//     <Empty />
-//   );
-// };
-
-// export default Suppliers;

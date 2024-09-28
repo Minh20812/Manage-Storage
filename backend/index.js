@@ -8,7 +8,7 @@ import userRoutes from "./src/routers/userRoutes.js";
 import supplierRoutes from "./src/routers/supplierRoutes.js";
 
 dotenv.config();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5000;
 
 connectDB(); //kết nối đến cơ sở dữ liệu
 
@@ -18,11 +18,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/test", (req, res) => {
+  res.send("API is working");
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/suppliers", supplierRoutes);
-
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
 
 app.listen(port, () => console.log(`Server running on port ${port}`));

@@ -1,30 +1,55 @@
 import { Dialog, Select } from "@headlessui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAddSupplierMutation } from "../../../../redux/api/supplierApiSlice.js";
 
 const AddSupplierModal = ({ isOpen, closeModal }) => {
   const [addSupplier] = useAddSupplierMutation();
-  const [supplier, setSupplier] = useState({
+  const initialSupplierState = {
     name: "",
     email: "",
     product: "",
     category: "",
     buyingPrice: "",
     contactNumber: "",
-  });
+  };
+  const [supplier, setSupplier] = useState(initialSupplierState);
+
+  const resetForm = () => {
+    setSupplier(initialSupplierState);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await addSupplier(supplier).unwrap();
       console.log("New Supplier Added Successfully");
-      console.log(supplier);
+      resetForm();
       closeModal();
     } catch (error) {
       console.error("Failed to add supplier: ", error);
       console.log(supplier);
     }
   };
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter" && isOpen) {
+        handleSubmit();
+      }
+    };
+
+    document.addEventListener("keypress", handleKeyPress);
+
+    return () => {
+      document.removeEventListener("keypress", handleKeyPress);
+    };
+  }, [supplier, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   return (
     <Dialog
