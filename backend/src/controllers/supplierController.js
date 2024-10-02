@@ -50,4 +50,32 @@ const getAllSuppliers = async (req, res) => {
   }
 };
 
-export { addSupplier, getAllSuppliers };
+const updateSupplierById = async (req, res) => {
+  const supplier = await Supplier.findById(req.params.id);
+
+  if (supplier) {
+    supplier.name = req.body.name || supplier.name;
+    supplier.email = req.body.email || supplier.email;
+    supplier.buyingPrice = req.body.buyingPrice || supplier.buyingPrice;
+    supplier.category = req.body.category || supplier.category;
+    supplier.contactNumber = req.body.contactNumber || supplier.contactNumber;
+    supplier.product = req.body.product || supplier.product;
+
+    const updatedSupplier = await supplier.save();
+
+    res.json({
+      _id: updatedSupplier._id,
+      name: updatedSupplier.name,
+      email: updatedSupplier.email,
+      buyingPrice: updatedSupplier.buyingPrice,
+      category: updatedSupplier.category,
+      contactNumber: updatedSupplier.contactNumber,
+      product: updatedSupplier.product,
+    });
+  } else {
+    res.status(404);
+    throw new Error("Supplier not found");
+  }
+};
+
+export { addSupplier, getAllSuppliers, updateSupplierById };

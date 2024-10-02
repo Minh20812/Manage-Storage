@@ -1,15 +1,28 @@
 import React, { useState, useMemo } from "react";
 import AddSupplierModal from "./component/AddSupplierModal";
-import { useGetAllSuppliersQuery } from "../../../redux/api/supplierApiSlice";
+import EditSupplierModal from "./component/EditSupplierModal";
+import {
+  useGetAllSuppliersQuery,
+  useUpdateSupplierByIdMutation,
+} from "../../../redux/api/supplierApiSlice";
 import Filter from "./component/Filter";
 
 const MainSuppliers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentFilter, setCurrentFilter] = useState("");
-  const itemsPerPage = 10;
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
-  const { data: suppliers = [], isLoading, error } = useGetAllSuppliersQuery();
+  const itemsPerPage = 8;
+
+  const {
+    data: suppliers = [],
+    isLoading,
+    error,
+    refetch,
+  } = useGetAllSuppliersQuery();
+  const [updateSupplier] = useUpdateSupplierByIdMutation();
 
   const filteredSuppliers = useMemo(() => {
     let result = [...suppliers];
@@ -51,7 +64,27 @@ const MainSuppliers = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  // Generate CSV manually
+  const openEditModal = (supplier) => {
+    setSelectedSupplier(supplier);
+    setIsEditModalOpen(true);
+  };
+  const closeEditModal = () => {
+    setSelectedSupplier(null);
+    setIsEditModalOpen(false);
+  };
+
+  const handleUpdateSupplier = async (updatedSupplier) => {
+    try {
+      console.log("Attempting to update supplier:", updatedSupplier);
+      const result = await updateSupplier(updatedSupplier).unwrap();
+      console.log("API response after update:", result);
+      refetch(); // Refresh the suppliers list
+      closeEditModal();
+    } catch (err) {
+      console.error("Failed to update supplier:", err);
+    }
+  };
+
   const downloadAllData = () => {
     const csvHeader =
       "Supplier Name,Product,Category,Buying Price,Contact Number,Email\n";
@@ -96,6 +129,7 @@ const MainSuppliers = () => {
             Add Supplier
           </button>
           <AddSupplierModal isOpen={isModalOpen} closeModal={closeModal} />
+
           <Filter onFilter={handleFilter} />
           <button
             onClick={downloadAllData}
@@ -130,6 +164,14 @@ const MainSuppliers = () => {
                 <td className="py-2 px-4">{supplier.buyingPrice}</td>
                 <td className="py-2 px-4">{supplier.contactNumber}</td>
                 <td className="py-2 px-4">{supplier.email}</td>
+                <td className="py-2 px-4">
+                  <button
+                    onClick={() => openEditModal(supplier)}
+                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Edit
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -155,6 +197,13 @@ const MainSuppliers = () => {
           Next
         </button>
       </div>
+
+      <EditSupplierModal
+        isOpen={isEditModalOpen}
+        closeModal={closeEditModal}
+        supplier={selectedSupplier}
+        onUpdate={handleUpdateSupplier}
+      />
     </div>
   );
 };

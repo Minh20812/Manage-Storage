@@ -34,12 +34,12 @@ export const supplierApiSlice = apiSlice.injectEndpoints({
     }),
     updateSupplierById: builder.mutation({
       query: (data) => ({
-        url: `${SUPPLIERS_URL}/${data.supplierId}`,
+        url: `${SUPPLIERS_URL}/${data._id}`,
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: (result, error, { supplierId }) => [
-        { type: "Supplier", id: supplierId },
+      invalidatesTags: (result, error, { _id }) => [
+        { type: "Supplier", id: _id },
       ],
     }),
   }),
