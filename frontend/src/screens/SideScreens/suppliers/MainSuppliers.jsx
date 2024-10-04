@@ -22,6 +22,7 @@ const MainSuppliers = () => {
     error,
     refetch,
   } = useGetAllSuppliersQuery();
+
   const [updateSupplier] = useUpdateSupplierByIdMutation();
 
   const filteredSuppliers = useMemo(() => {
@@ -68,6 +69,7 @@ const MainSuppliers = () => {
     setSelectedSupplier(supplier);
     setIsEditModalOpen(true);
   };
+
   const closeEditModal = () => {
     setSelectedSupplier(null);
     setIsEditModalOpen(false);
@@ -82,6 +84,7 @@ const MainSuppliers = () => {
       closeEditModal();
     } catch (err) {
       console.error("Failed to update supplier:", err);
+      alert("Failed to update supplier. Please try again.");
     }
   };
 
@@ -191,7 +194,7 @@ const MainSuppliers = () => {
         </p>
         <button
           onClick={nextPage}
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || totalPages === 0}
           className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
         >
           Next
@@ -203,6 +206,7 @@ const MainSuppliers = () => {
         closeModal={closeEditModal}
         supplier={selectedSupplier}
         onUpdate={handleUpdateSupplier}
+        refetch={refetch}
       />
     </div>
   );

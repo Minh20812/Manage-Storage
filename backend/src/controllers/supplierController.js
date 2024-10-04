@@ -78,4 +78,16 @@ const updateSupplierById = async (req, res) => {
   }
 };
 
-export { addSupplier, getAllSuppliers, updateSupplierById };
+const deleteSupplierById = async (req, res) => {
+  const supplier = await Supplier.findById(req.params.id);
+
+  if (supplier) {
+    await supplier.deleteOne({ _id: supplier._id });
+    res.json({ message: "Supplier deleted successfully" });
+  } else {
+    res.status(404);
+    throw new Error("Supplier not found");
+  }
+};
+
+export { addSupplier, getAllSuppliers, updateSupplierById, deleteSupplierById };

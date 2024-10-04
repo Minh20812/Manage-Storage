@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { useDeleteSupplierByIdMutation } from "../../../../redux/api/supplierApiSlice";
+import { toast } from "react-toastify";
 
-const EditSupplierModal = ({ isOpen, closeModal, supplier, onUpdate }) => {
+const EditSupplierModal = ({
+  isOpen,
+  closeModal,
+  supplier,
+  onUpdate,
+  refetch,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     product: "",
@@ -12,9 +20,22 @@ const EditSupplierModal = ({ isOpen, closeModal, supplier, onUpdate }) => {
     email: "",
   });
 
+  const [deleteSupplierById] = useDeleteSupplierByIdMutation();
+
+  const deleteHandler = async (id) => {
+    if (window.confirm("Are you sure you want to delete this supplier?")) {
+      try {
+        await deleteSupplierById(id);
+        if (refetch) refetch(); // Ensure refetch is called if available
+        closeModal(); // Close the modal after successful deletion
+      } catch (error) {
+        toast.error(error.message);
+      }
+    }
+  };
+
   useEffect(() => {
     if (supplier) {
-      console.log("Initial supplier data:", supplier);
       setFormData({
         name: supplier.name || "",
         product: supplier.product || "",
@@ -28,27 +49,42 @@ const EditSupplierModal = ({ isOpen, closeModal, supplier, onUpdate }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const newValue = name === "buyingPrice" ? parseFloat(value) : value;
-    console.log(`Field ${name} changed to:`, newValue);
+    const newValue = name === "buyingPrice" ? parseFloat(value) || "" : value; // Handle NaN case
     setFormData((prevData) => ({
       ...prevData,
       [name]: newValue,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting updated supplier data:", formData);
-    onUpdate({
-      ...supplier,
-      ...formData,
-    });
+    try {
+      await onUpdate({
+        ...supplier, // Ensure supplier is not mutated directly
+        ...formData,
+      });
+      toast.success("Supplier updated successfully!");
+      closeModal();
+    } catch (error) {
+      toast.error("Failed to update supplier.");
+    }
+  };
+
+  const handleModalClose = () => {
+    setFormData({
+      name: "",
+      product: "",
+      category: "",
+      buyingPrice: "",
+      contactNumber: "",
+      email: "",
+    }); // Reset form on close
     closeModal();
   };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={closeModal}>
+      <Dialog as="div" className="relative z-10" onClose={handleModalClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -80,6 +116,7 @@ const EditSupplierModal = ({ isOpen, closeModal, supplier, onUpdate }) => {
                   Edit Supplier
                 </Dialog.Title>
                 <form onSubmit={handleSubmit} className="mt-2">
+                  {/* Input fields */}
                   <div className="mb-4">
                     <label
                       htmlFor="name"
@@ -182,11 +219,19 @@ const EditSupplierModal = ({ isOpen, closeModal, supplier, onUpdate }) => {
                       required
                     />
                   </div>
+                  {/* Action Buttons */}
                   <div className="mt-4 flex justify-end space-x-2">
                     <button
                       type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-pink-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-pink-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
+                      onClick={() => deleteHandler(supplier._id)}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
                       className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
-                      onClick={closeModal}
+                      onClick={handleModalClose}
                     >
                       Cancel
                     </button>
