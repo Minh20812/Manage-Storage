@@ -6,8 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api/": "http://localhost:5000",
-      "/uploads/": "http://localhost:5000",
+      "/api/": "https://manage-storage.onrender.com",
+      "/uploads/": "https://manage-storage.onrender.com",
+    },
+  },
+  build: {
+    rollupOptions: {
+      external: ["react-toastify"], // Thêm dòng này
     },
   },
 });
