@@ -1,4 +1,4 @@
-import Inventory from "../models/inventoryModel.js";
+import Inventory from "../models/InventoryModel.js";
 
 const addProduct = async (req, res) => {
   try {
